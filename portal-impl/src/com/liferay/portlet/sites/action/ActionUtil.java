@@ -248,6 +248,7 @@ public class ActionUtil
 
 	public static Group getGroup(HttpServletRequest request) throws Exception {
 		String cmd = ParamUtil.getString(request, Constants.CMD);
+
 		long groupId = ParamUtil.getLong(request, "groupId");
 
 		Group group = null;
@@ -255,13 +256,11 @@ public class ActionUtil
 		if (groupId > 0) {
 			group = GroupLocalServiceUtil.getGroup(groupId);
 		}
-		else {
-			if (!cmd.equals(Constants.ADD)) {
-				ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-					WebKeys.THEME_DISPLAY);
+		else if (!cmd.equals(Constants.ADD)) {
+			ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
-				group = themeDisplay.getScopeGroup();
-			}
+			group = themeDisplay.getScopeGroup();
 		}
 
 		request.setAttribute(WebKeys.GROUP, group);
