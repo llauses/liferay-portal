@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.SystemProperties;
 import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.Layout;
 import com.liferay.portal.model.LayoutConstants;
@@ -34,6 +35,7 @@ import com.liferay.portal.model.LayoutSetPrototype;
 import com.liferay.portal.model.ResourceConstants;
 import com.liferay.portal.model.ResourcePermission;
 import com.liferay.portal.model.UserGroup;
+import com.liferay.portal.model.impl.VirtualLayout;
 import com.liferay.portal.security.permission.PermissionChecker;
 import com.liferay.portal.security.permission.PermissionThreadLocal;
 import com.liferay.portal.service.GroupLocalServiceUtil;
@@ -77,9 +79,9 @@ public class LayoutLocalServiceDynamicLayoutsAdvice
 
 		Class<?>[] parameterTypes = method.getParameterTypes();
 
-		if ((methodName.equals("getLayouts") &&
-			 Arrays.equals(parameterTypes, gpp)) ||
-			 Arrays.equals(parameterTypes, gppise)) {
+		if (methodName.equals("getLayouts") &&
+			 Arrays.equals(parameterTypes, _TYPES_L_B_L) ||
+			 Arrays.equals(parameterTypes, _TYPES_L_B_L_B_I_I)) {
 
 			long groupId = (Long)arguments[0];
 			boolean privateLayout = (Boolean)arguments[1];
@@ -129,18 +131,15 @@ public class LayoutLocalServiceDynamicLayoutsAdvice
 			UserGroupLocalServiceUtil.getUserUserGroups(group.getClassPK());
 
 		for (UserGroup userGroup : userUserGroups) {
-			// TODO
-		}
+			Group userGroupGroup = userGroup.getGroup();
 
-		// Test
-//		Group symlinkedGroup = GroupLocalServiceUtil.getGroup(11401);
-//
-//		List<Layout> symLinkedlayouts = LayoutLocalServiceUtil.getLayouts(
-//			symlinkedGroup.getGroupId(), layoutSet.isPrivateLayout());
-//
-//		for (Layout symLayout : symLinkedlayouts) {
-//			layouts.add(new VirtualLayout(symLayout, group));
-//		}
+			List<Layout> userGroupLayouts = LayoutLocalServiceUtil.getLayouts(
+				userGroupGroup.getGroupId(), layoutSet.isPrivateLayout());
+
+			for (Layout userGroupLayout : userGroupLayouts) {
+				layouts.add(new VirtualLayout(userGroupLayout, group));
+			}
+		}
 
 		return layouts;
 	}
@@ -152,6 +151,7 @@ public class LayoutLocalServiceDynamicLayoutsAdvice
 
 		if ((permissionChecker == null) || !permissionChecker.isSignedIn() ||
 			!layoutSet.getLayoutSetPrototypeLinkEnabled() ||
+			Validator.isNull(layoutSet.getLayoutSetPrototypeUuid()) ||
 			group.isLayoutPrototype() || group.isLayoutSetPrototype()) {
 
 			return;
@@ -172,7 +172,7 @@ public class LayoutLocalServiceDynamicLayoutsAdvice
 
 		Date lastMergeDate = dateFormat.parse(lastMergeDateString);
 
-		if (layoutSetPrototype.getModifiedDate().before(lastMergeDate)) {
+		if (!layoutSetPrototype.getModifiedDate().after(lastMergeDate)) {
 			return;
 		}
 
@@ -346,20 +346,6 @@ public class LayoutLocalServiceDynamicLayoutsAdvice
 	private static Log _log = LogFactoryUtil.getLog(
 		LayoutLocalServiceDynamicLayoutsAdvice.class);
 
-	private static final Class<?>[] gp = new Class<?>[] {
-		Long.TYPE, Boolean.TYPE
-	};
-	private static final Class<?>[] gpp = new Class<?>[] {
-		Long.TYPE, Boolean.TYPE, Long.TYPE
-	};
-	private static final Class<?>[] gppise = new Class<?>[] {
-		Long.TYPE, Boolean.TYPE, Long.TYPE, Boolean.TYPE, Integer.TYPE,
-		Integer.TYPE
-	};
-	private static final Class<?>[] gps = new Class<?>[] {
-		Long.TYPE, Boolean.TYPE, String.class
-	};
-
 	private static final String _LAST_MERGE_DATE = "lastMergeDate";
 
 	private static final String _NULL_DATE = "00000000000000";
@@ -367,5 +353,13 @@ public class LayoutLocalServiceDynamicLayoutsAdvice
 	private static final String _TEMP_DIR =
 		SystemProperties.get(SystemProperties.TMP_DIR) +
 			"/liferay/layout_set_prototype/";
+
+	private static final Class<?>[] _TYPES_L_B_L = new Class<?>[] {
+		Long.TYPE, Boolean.TYPE, Long.TYPE
+	};
+	private static final Class<?>[] _TYPES_L_B_L_B_I_I = new Class<?>[] {
+		Long.TYPE, Boolean.TYPE, Long.TYPE, Boolean.TYPE, Integer.TYPE,
+		Integer.TYPE
+	};
 
 }
