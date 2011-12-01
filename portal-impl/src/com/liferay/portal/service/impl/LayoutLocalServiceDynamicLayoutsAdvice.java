@@ -22,11 +22,13 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.FileUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.SystemProperties;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.Layout;
+import com.liferay.portal.model.LayoutConstants;
 import com.liferay.portal.model.LayoutSet;
 import com.liferay.portal.model.LayoutSetPrototype;
 import com.liferay.portal.model.ResourceConstants;
@@ -46,13 +48,13 @@ import java.io.File;
 
 import java.lang.reflect.Method;
 
-import java.text.DateFormat;
-
 import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import java.text.DateFormat;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -75,14 +77,13 @@ public class LayoutLocalServiceDynamicLayoutsAdvice
 
 		Class<?>[] parameterTypes = method.getParameterTypes();
 
-		if (methodName.equals("getLayouts") &&
-			(Arrays.equals(parameterTypes, gp) ||
-			 Arrays.equals(parameterTypes, gpp) ||
-			 Arrays.equals(parameterTypes, gppise) ||
-			 Arrays.equals(parameterTypes, gps))) {
+		if ((methodName.equals("getLayouts") &&
+			 Arrays.equals(parameterTypes, gpp)) ||
+			 Arrays.equals(parameterTypes, gppise)) {
 
 			long groupId = (Long)arguments[0];
 			boolean privateLayout = (Boolean)arguments[1];
+			long parentLayoutId = (Long)arguments[2];
 
 			PermissionChecker permissionChecker =
 				PermissionThreadLocal.getPermissionChecker();
@@ -93,13 +94,19 @@ public class LayoutLocalServiceDynamicLayoutsAdvice
 				LayoutSet layoutSet = LayoutSetLocalServiceUtil.getLayoutSet(
 					groupId, privateLayout);
 
-				doProcessLayoutSetProtype(permissionChecker, group, layoutSet);
+				mergeLayoutSetProtypeLayouts(
+					permissionChecker, group, layoutSet);
 
-				Object returnValue = methodInvocation.proceed();
+				if (!PropsValues.USER_GROUPS_COPY_LAYOUTS_TO_USER_PERSONAL_SITE &&
+					group.isUser() &&
+					(parentLayoutId == LayoutConstants.DEFAULT_PARENT_LAYOUT_ID)) {
 
-				return doDynamicLayouts(
-					permissionChecker, group, layoutSet,
-					(List<Layout>)returnValue, parameterTypes);
+					Object returnValue = methodInvocation.proceed();
+
+					return addUserGroupLayouts(
+						permissionChecker, group, layoutSet,
+						(List<Layout>)returnValue);
+				}
 			}
 			catch (Exception e) {
 				_log.error(e, e);
@@ -111,17 +118,12 @@ public class LayoutLocalServiceDynamicLayoutsAdvice
 		return methodInvocation.proceed();
 	}
 
-	protected List<Layout> doDynamicLayouts(
+	protected List<Layout> addUserGroupLayouts(
 			PermissionChecker permissionChecker, Group group,
-			LayoutSet layoutSet, List<Layout> layouts,
-			Class<?>[] parameterTypes)
+			LayoutSet layoutSet, List<Layout> layouts)
 		throws Exception {
 
-		if (PropsValues.USER_GROUPS_COPY_LAYOUTS_TO_USER_PERSONAL_SITE ||
-			!group.isUser()) {
-
-			return layouts;
-		}
+		layouts = ListUtil.copy(layouts);
 
 		List<UserGroup> userUserGroups =
 			UserGroupLocalServiceUtil.getUserUserGroups(group.getClassPK());
@@ -130,10 +132,20 @@ public class LayoutLocalServiceDynamicLayoutsAdvice
 			// TODO
 		}
 
+		// Test
+//		Group symlinkedGroup = GroupLocalServiceUtil.getGroup(11401);
+//
+//		List<Layout> symLinkedlayouts = LayoutLocalServiceUtil.getLayouts(
+//			symlinkedGroup.getGroupId(), layoutSet.isPrivateLayout());
+//
+//		for (Layout symLayout : symLinkedlayouts) {
+//			layouts.add(new VirtualLayout(symLayout, group));
+//		}
+
 		return layouts;
 	}
 
-	protected void doProcessLayoutSetProtype(
+	protected void mergeLayoutSetProtypeLayouts(
 			PermissionChecker permissionChecker, Group group,
 			LayoutSet layoutSet)
 		throws Exception {
