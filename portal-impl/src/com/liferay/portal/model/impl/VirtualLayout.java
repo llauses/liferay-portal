@@ -30,19 +30,15 @@ public class VirtualLayout extends LayoutWrapper {
 
 	public static final String CANONICAL_URL_SEPARATOR = "/~";
 
-	public VirtualLayout(Layout layout, Group group) {
+	public VirtualLayout(Layout layout, Group hostGroup) {
 		super(layout);
 
-		_group = group;
+		_hostGroup = hostGroup;
 	}
 
 	@Override
 	public java.lang.Object clone() {
-		return new VirtualLayout((Layout)super.clone(), _group);
-	}
-
-	public long getAliasGroupId() {
-		return super.getGroupId();
+		return new VirtualLayout((Layout)super.clone(), _hostGroup);
 	}
 
 	@Override
@@ -64,12 +60,20 @@ public class VirtualLayout extends LayoutWrapper {
 
 	@Override
 	public Group getGroup() throws PortalException, SystemException {
-		return _group;
+		return getHostGroup();
 	}
 
 	@Override
 	public long getGroupId() {
-		return _group.getGroupId();
+		return getHostGroupId();
+	}
+
+	public Group getHostGroup() throws PortalException, SystemException {
+		return _hostGroup;
+	}
+
+	public long getHostGroupId() {
+		return _hostGroup.getGroupId();
 	}
 
 	@Override
@@ -78,7 +82,7 @@ public class VirtualLayout extends LayoutWrapper {
 
 		String layoutURL = super.getRegularURL(request);
 
-		return injectSymLinkURL(layoutURL);
+		return injectHostGroupURL(layoutURL);
 	}
 
 	@Override
@@ -87,7 +91,7 @@ public class VirtualLayout extends LayoutWrapper {
 
 		String layoutURL = super.getResetLayoutURL(request);
 
-		return injectSymLinkURL(layoutURL);
+		return injectHostGroupURL(layoutURL);
 	}
 
 	@Override
@@ -96,10 +100,14 @@ public class VirtualLayout extends LayoutWrapper {
 
 		String layoutURL = super.getResetMaxStateURL(request);
 
-		return injectSymLinkURL(layoutURL);
+		return injectHostGroupURL(layoutURL);
 	}
 
-	protected String injectSymLinkURL(String layoutURL) {
+	public long getSourceGroupId() {
+		return super.getGroupId();
+	}
+
+	protected String injectHostGroupURL(String layoutURL) {
 		try {
 			Group group = super.getGroup();
 
@@ -108,7 +116,7 @@ public class VirtualLayout extends LayoutWrapper {
 			StringBundler sb = new StringBundler(3);
 
 			sb.append(layoutURL.substring(0, pos));
-			sb.append(_group.getFriendlyURL());
+			sb.append(_hostGroup.getFriendlyURL());
 			sb.append(getFriendlyURL());
 
 			return sb.toString();
@@ -118,6 +126,6 @@ public class VirtualLayout extends LayoutWrapper {
 		}
 	}
 
-	private Group _group;
+	private Group _hostGroup;
 
 }

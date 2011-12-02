@@ -764,7 +764,7 @@ public class PortalImpl implements Portal {
 						VirtualLayout.CANONICAL_URL_SEPARATOR)) {
 
 				try {
-					actualURL = getSymbolicLinkLayoutActualURL(
+					actualURL = getVirtualLayoutActualURL(
 						groupId, privateLayout, mainPath, friendlyURL, params,
 						requestContext);
 				}
@@ -2032,11 +2032,11 @@ public class PortalImpl implements Portal {
 		variables.put("liferay:groupId", String.valueOf(layout.getGroupId()));
 		variables.put("liferay:mainPath", mainPath);
 		variables.put("liferay:plid", String.valueOf(layout.getPlid()));
-		variables.put("liferay:slg_id", "0");
+		variables.put("liferay:hostGroupId", "0");
 
 		if (layout instanceof VirtualLayout) {
 			variables.put(
-				"liferay:slg_id", String.valueOf(layout.getGroupId()));
+				"liferay:hostGroupId", String.valueOf(layout.getGroupId()));
 		}
 
 		LayoutType layoutType = layout.getLayoutType();
@@ -3332,9 +3332,9 @@ public class PortalImpl implements Portal {
 
 			if (Validator.isNull(scopeType)) {
 				if (layout instanceof VirtualLayout) {
-					VirtualLayout sll = (VirtualLayout)layout;
+					VirtualLayout virtualLayout = (VirtualLayout)layout;
 
-					return sll.getAliasGroupId();
+					return virtualLayout.getSourceGroupId();
 				}
 				else {
 					return layout.getGroupId();
@@ -3627,59 +3627,6 @@ public class PortalImpl implements Portal {
 		}
 
 		return _getPortletParam(request, "struts_action");
-	}
-
-	public String getSymbolicLinkLayoutActualURL(
-			long groupId, boolean privateLayout, String mainPath,
-			String friendlyURL, Map<String, String[]> params,
-			Map<String, Object> requestContext)
-		throws PortalException, SystemException {
-
-		// Group friendly URL
-
-		String groupFriendlyURL = null;
-
-		int pos = friendlyURL.indexOf(CharPool.SLASH, 3);
-
-		if (pos != -1) {
-			groupFriendlyURL = friendlyURL.substring(2, pos);
-		}
-
-		if (Validator.isNull(groupFriendlyURL)) {
-			return mainPath;
-		}
-
-		HttpServletRequest request = (HttpServletRequest)requestContext.get(
-			"request");
-
-		long companyId = PortalInstances.getCompanyId(request);
-
-		Group group = GroupLocalServiceUtil.fetchFriendlyURLGroup(
-			companyId, groupFriendlyURL);
-
-		if (group == null) {
-			return mainPath;
-		}
-
-		// Layout friendly URL
-
-		String layoutFriendlyURL = null;
-
-		if ((pos != -1) && ((pos + 1) != friendlyURL.length())) {
-			layoutFriendlyURL = friendlyURL.substring(
-				pos, friendlyURL.length());
-		}
-
-		if (Validator.isNull(layoutFriendlyURL)) {
-			return mainPath;
-		}
-
-		String actualURL = getActualURL(
-			group.getGroupId(), privateLayout, mainPath, layoutFriendlyURL,
-			params, requestContext);
-
-		return HttpUtil.addParameter(
-			HttpUtil.removeParameter(actualURL, "slg_id"), "slg_id", groupId);
 	}
 
 	public String[] getSystemGroups() {
@@ -4059,6 +4006,60 @@ public class PortalImpl implements Portal {
 		catch (NoSuchUserException nsue) {
 			return UserLocalServiceUtil.getDefaultUserId(companyId);
 		}
+	}
+
+	public String getVirtualLayoutActualURL(
+			long groupId, boolean privateLayout, String mainPath,
+			String friendlyURL, Map<String, String[]> params,
+			Map<String, Object> requestContext)
+		throws PortalException, SystemException {
+
+		// Group friendly URL
+
+		String groupFriendlyURL = null;
+
+		int pos = friendlyURL.indexOf(CharPool.SLASH, 3);
+
+		if (pos != -1) {
+			groupFriendlyURL = friendlyURL.substring(2, pos);
+		}
+
+		if (Validator.isNull(groupFriendlyURL)) {
+			return mainPath;
+		}
+
+		HttpServletRequest request = (HttpServletRequest)requestContext.get(
+			"request");
+
+		long companyId = PortalInstances.getCompanyId(request);
+
+		Group group = GroupLocalServiceUtil.fetchFriendlyURLGroup(
+			companyId, groupFriendlyURL);
+
+		if (group == null) {
+			return mainPath;
+		}
+
+		// Layout friendly URL
+
+		String layoutFriendlyURL = null;
+
+		if ((pos != -1) && ((pos + 1) != friendlyURL.length())) {
+			layoutFriendlyURL = friendlyURL.substring(
+				pos, friendlyURL.length());
+		}
+
+		if (Validator.isNull(layoutFriendlyURL)) {
+			return mainPath;
+		}
+
+		String actualURL = getActualURL(
+			group.getGroupId(), privateLayout, mainPath, layoutFriendlyURL,
+			params, requestContext);
+
+		return HttpUtil.addParameter(
+			HttpUtil.removeParameter(actualURL, "hostGroupId"), "hostGroupId",
+			groupId);
 	}
 
 	public String getWidgetURL(Portlet portlet, ThemeDisplay themeDisplay)
