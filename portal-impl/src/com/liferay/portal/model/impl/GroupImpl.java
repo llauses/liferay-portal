@@ -225,7 +225,18 @@ public class GroupImpl extends GroupBaseImpl {
 		try {
 			LayoutSet layoutSet = getPrivateLayoutSet();
 
-			return layoutSet.getPageCount();
+			int pageCount = layoutSet.getPageCount();
+
+			if (isUser()) {
+				List<UserGroup> userGroups =
+					UserGroupLocalServiceUtil.getUserUserGroups(getClassPK());
+
+				for (UserGroup userGroup : userGroups) {
+					pageCount += userGroup.getPrivateLayoutsPageCount();
+				}
+			}
+
+			return pageCount;
 		}
 		catch (Exception e) {
 			_log.error(e);
@@ -252,7 +263,18 @@ public class GroupImpl extends GroupBaseImpl {
 		try {
 			LayoutSet layoutSet = getPublicLayoutSet();
 
-			return layoutSet.getPageCount();
+			int pageCount = layoutSet.getPageCount();
+
+			if (isUser()) {
+				List<UserGroup> userGroups =
+					UserGroupLocalServiceUtil.getUserUserGroups(getClassPK());
+
+				for (UserGroup userGroup : userGroups) {
+					pageCount += userGroup.getPublicLayoutsPageCount();
+				}
+			}
+
+			return pageCount;
 		}
 		catch (Exception e) {
 			_log.error(e);
