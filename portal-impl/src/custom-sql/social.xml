@@ -7,12 +7,17 @@
 				COUNT(DISTINCT classPK) AS COUNT_VALUE
 			FROM
 				SocialActivityCounter
+			INNER JOIN
+				User_ ON
+					(SocialActivityCounter.classPK = User_.userId)
 			WHERE
 				(groupId = ?) AND
 				(classNameId = ?) AND
 				(name IN ([$NAME$])) AND
 				(startPeriod + ? >= ?) AND
-				(endPeriod = -1)
+				(endPeriod = -1) AND
+				(User_.defaultUser != [$TRUE$]) AND
+				(User_.status = 0)
 		]]>
 	</sql>
 	<sql id="com.liferay.portlet.social.service.persistence.SocialActivityCounterFinder.findAC_ByG_N_S_E_1">
@@ -77,12 +82,17 @@
 				classPK
 			FROM
 				SocialActivityCounter
+			INNER JOIN
+				User_ ON
+					(SocialActivityCounter.classPK = User_.userId)
 			WHERE
 				(groupId = ?) AND
 				(classNameId = ?) AND
 				(name IN ([$NAME$])) AND
 				(startPeriod >= ?) AND
-				(endPeriod = -1)
+				(endPeriod = -1) AND
+				(User_.defaultUser != [$TRUE$]) AND
+				(User_.status = 0)
 			GROUP BY
 				classPK
 			ORDER BY
