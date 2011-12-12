@@ -44,6 +44,7 @@ import com.liferay.portal.service.LayoutSetLocalServiceUtil;
 import com.liferay.portal.service.LayoutSetPrototypeLocalServiceUtil;
 import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.service.ServiceContextFactory;
+import com.liferay.portal.service.UserLocalServiceUtil;
 import com.liferay.portal.service.permission.GroupPermissionUtil;
 import com.liferay.portal.service.permission.LayoutPermissionUtil;
 import com.liferay.portal.service.permission.PortalPermissionUtil;
@@ -572,6 +573,20 @@ public class SitesUtil {
 		}
 
 		return true;
+	}
+
+	public static boolean isUserGroupLayoutSetViewable(
+			PermissionChecker permissionChecker, Group userGroupGroup)
+		throws SystemException {
+
+		if (UserLocalServiceUtil.hasUserGroupUser(
+			userGroupGroup.getGroupId(), permissionChecker.getUserId())) {
+
+			return true;
+		}
+		else {
+			return false;
+		}
 	}
 
 	protected static void setLayoutSetPrototypeLinkEnabled(
