@@ -670,17 +670,32 @@ public class OrganizationLocalServiceImpl
 			userId, QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 	}
 
+	/**
+	 * Returns all the organizations associated with the user. If
+	 * includeNonUser is true, the result includes those organizations that are
+	 * not directly associated to the user but he is an owner or an
+	 * administrator of the organization.
+	 *
+	 * @param  userId the primary key of the user
+	 * @param  includeNonUser if <code>true</code> the result includes those
+	 *         organizations that are not directly associated to the user but he
+	 *         is an owner or an administrator of the organization. Otherwise
+	 *         returns the same result as #getUserOrganizations(long).
+	 * @return the organizations associated with the user
+	 * @throws PortalException if a user with the primary key could not be found
+	 * @throws SystemException if a system exception occurred
+	 */
 	public List<Organization> getUserOrganizations(
-			long userId, boolean includeNonMember)
+			long userId, boolean includeNonUser)
 		throws PortalException, SystemException {
 
-		if (!includeNonMember) {
+		if (!includeNonUser) {
 			return getUserOrganizations(userId);
 		}
 
 		Set<Organization> organizations = new HashSet<Organization>();
 
-		if (includeNonMember) {
+		if (includeNonUser) {
 			List<UserGroupRole> userGroupRoles =
 				userGroupRoleLocalService.getUserGroupRoles(userId);
 
